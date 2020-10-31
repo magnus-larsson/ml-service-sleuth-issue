@@ -37,6 +37,10 @@ public class MessageProcessor {
             productService.createProduct(product);
             break;
 
+        case NOOP:
+            LOG.info("No MongoDb processing for this event");
+            break;
+
         default:
             String errorMessage = "Incorrect event type: " + event.getEventType() + ", expected a CREATE or DELETE event";
             LOG.warn(errorMessage);

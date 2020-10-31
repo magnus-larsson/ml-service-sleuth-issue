@@ -11,7 +11,7 @@ public class Product {
         weight = 0;
     }
 
-    public Product(int productId, String name, int weight, String serviceAddress) {
+    public Product(int productId, String name, int weight) {
         this.productId = productId;
         this.name = name;
         this.weight = weight;
