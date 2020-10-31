@@ -19,43 +19,46 @@ import static se.magnus.api.event.Event.Type.NOOP;
 @SpringBootTest(properties = {"spring.data.mongodb.port: 0"})
 public class MLTests {
 
+    @Autowired private Sink channels;
+
     @Autowired
-   	private Sink channels;
+    private ProductRepository repository;
 
-	@Autowired
-	private ProductRepository repository;
+    @Autowired
+    private ProductService service;
 
-	@Autowired
-	private ProductService service;
+    private AbstractMessageChannel input = null;
 
-   	private AbstractMessageChannel input = null;
+    private Product product = new Product(1, "Name 1", 1);
 
-   	@BeforeEach
-   	public void setupTest() {
-   		input = (AbstractMessageChannel) channels.input();
-   		repository.deleteAll().block(); // *** PROBLEM IS HERE ***
-   	}
+    @BeforeEach
+    public void setupTest() {
+        input = (AbstractMessageChannel) channels.input();
+        repository.deleteAll().block();
+    }
 
-   	@Test
-   	public void createProductUsingStream() {
-		Product product = new Product(1, "Name 1", 1);
-		Event<Integer, Product> event = new Event(CREATE, 1, product);
-		input.send(new GenericMessage<>(event));
-   	}
+    @Test
+    public void createProductUsingStream() {
+      assertEquals(0, getNoOfProductsInDb());
+      input.send(new GenericMessage<>(new Event(CREATE, 1, product)));
+      assertEquals(1, getNoOfProductsInDb());
+    }
 
-	@Test
-	public void createProductDirect() {
-		assertEquals(0, repository.count().block());
-		Product product = new Product(1, "Name 1", 1);
-		Product newProduct = service.createProduct(product);
-		assertEquals(1, repository.count().block());
-	}
+    @Test
+    public void createProductDirect() {
+        assertEquals(0, getNoOfProductsInDb());
+        service.createProduct(product);
+        assertEquals(1, getNoOfProductsInDb());
+    }
 
-	@Test
-	public void createProductNoop() {
-		Product product = new Product(1, "Name 1", 1);
-		Event<Integer, Product> event = new Event(NOOP, 1, product);
-		input.send(new GenericMessage<>(event));
-	}
+    @Test
+    public void usingStreamWithoutMongoDb() {
+        assertEquals(0, getNoOfProductsInDb());
+        input.send(new GenericMessage<>(new Event(NOOP, 1, product)));
+        assertEquals(0, getNoOfProductsInDb());
+    }
 
+    private Long getNoOfProductsInDb() {
+        return repository.count().block();
+    }
 }
